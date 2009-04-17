@@ -36,8 +36,8 @@ namespace Dune {
      */
     template<typename K, typename A0, typename F, typename B, typename J, int qorder=1>
 	class Diffusion : public NumericalJacobianApplyVolume<Diffusion<K,A0,F,B,J,qorder> >,
-                      public NumericalJacobianVolume<Diffusion<K,A0,F,B,J,qorder> >,
-                    public FullVolumePattern
+                      public FullVolumePattern
+      //,public NumericalJacobianVolume<Diffusion<K,A0,F,B,J,qorder> >
 	{
 	public:
       // pattern assembly flags
@@ -121,12 +121,77 @@ namespace Dune {
             typename A0::Traits::RangeType y;
             a0.evaluate(eg.entity(),it->position(),y);
 
-            // integrate (K grad u) * grad phi_i
+            // integrate (K grad u)*grad phi_i + a_0*u*phi_i
             RF factor = it->weight() * eg.geometry().integrationElement(it->position());
             for (int i=0; i<lfsu.size(); i++)
               r[i] += ( Kgradu*gradphi[i] + y*u*phi[i] )*factor;
           }
 	  }
+
+      // jacobian of volume term
+      template<typename EG, typename LFSU, typename X, typename LFSV, typename R>
+	  void jacobian_volume (const EG& eg, const LFSU& lfsu, const X& x, const LFSV& lfsv, 
+                            LocalMatrix<R>& mat) const
+      {
+		// domain and range field type
+		typedef typename LFSU::Traits::LocalFiniteElementType::
+		  Traits::LocalBasisType::Traits::DomainFieldType DF;
+		typedef typename LFSU::Traits::LocalFiniteElementType::
+		  Traits::LocalBasisType::Traits::RangeFieldType RF;
+		typedef typename LFSU::Traits::LocalFiniteElementType::
+		  Traits::LocalBasisType::Traits::JacobianType JacobianType;
+		typedef typename LFSU::Traits::LocalFiniteElementType::
+		  Traits::LocalBasisType::Traits::RangeType RangeType;
+
+        // dimensions
+        const int dim = EG::Geometry::dimension;
+        const int dimw = EG::Geometry::dimensionworld;
+
+        // select quadrature rule
+        Dune::GeometryType gt = eg.geometry().type();
+        const Dune::QuadratureRule<DF,dim>& rule = Dune::QuadratureRules<DF,dim>::rule(gt,qorder);
+
+        // evaluate diffusion tensor at cell center, assume it is constant over elements
+        typename K::Traits::RangeType tensor;
+        Dune::FieldVector<DF,dim> localcenter = Dune::ReferenceElements<DF,dim>::general(gt).position(0,0);
+        k.evaluate(eg.entity(),localcenter,tensor);
+
+        // loop over quadrature points
+        for (typename Dune::QuadratureRule<DF,dim>::const_iterator it=rule.begin(); it!=rule.end(); ++it)
+          {
+            // evaluate gradient of shape functions (we assume Galerkin method lfsu=lfsv)
+            std::vector<JacobianType> js(lfsu.size());
+            lfsu.localFiniteElement().localBasis().evaluateJacobian(it->position(),js);
+
+            // transform gradient to real element
+            const Dune::FieldMatrix<DF,dimw,dim> jac = eg.geometry().jacobianInverseTransposed(it->position());
+            std::vector<Dune::FieldVector<RF,dim> > gradphi(lfsu.size());
+            for (int i=0; i<lfsu.size(); i++)
+              {
+                gradphi[i] = 0.0;
+                jac.umv(js[i][0],gradphi[i]);
+              }
+
+            // compute K * gradient of shape functions
+            std::vector<Dune::FieldVector<RF,dim> > Kgradphi(lfsu.size());
+            for (int i=0; i<lfsu.size(); i++)
+              tensor.mv(gradphi[i],Kgradphi[i]);
+            
+            // evaluate basis functions
+            std::vector<RangeType> phi(lfsu.size());
+            lfsu.localFiniteElement().localBasis().evaluateFunction(it->position(),phi);
+
+            // evaluate Helmholtz term
+            typename A0::Traits::RangeType y;
+            a0.evaluate(eg.entity(),it->position(),y);
+
+            // integrate (K grad phi_j)*grad phi_i + a_0*phi_j*phi_i
+            RF factor = it->weight() * eg.geometry().integrationElement(it->position());
+            for (int j=0; j<lfsu.size(); j++)
+              for (int i=0; i<lfsu.size(); i++)
+                mat(i,j) += ( Kgradphi[j]*gradphi[i] + y*phi[j]*phi[i] )*factor;
+          }
+      }
 
  	  // volume integral depending only on test functions
 	  template<typename EG, typename LFSV, typename R>
