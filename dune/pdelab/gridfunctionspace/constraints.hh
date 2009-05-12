@@ -27,6 +27,16 @@ namespace Dune {
       {
       }
     };
+    // BEGIN ParallelStuff
+    template<typename C, bool doIt>
+    struct ConstraintsCallProcessor
+    {
+      template<typename I, typename LFS, typename T>
+      static void processor (const C& c, const IntersectionGeometry<I>& ig, const LFS& lfs, T& trafo)
+      {
+      }
+    };
+    // END ParallelStuff
     template<typename C, bool doIt>
     struct ConstraintsCallSkeleton
     {
@@ -54,6 +64,17 @@ namespace Dune {
         c.boundary(f,ig,lfs,trafo);
       }
     };
+    // BEGIN ParallelStuff
+    template<typename C>
+    struct ConstraintsCallProcessor<C,true>
+    {
+      template<typename I, typename LFS, typename T>
+      static void processor (const C& c, const IntersectionGeometry<I>& ig, const LFS& lfs, T& trafo)
+      {
+        c.processor(ig,lfs,trafo);
+      }
+    };
+    // END ParallelStuff
     template<typename C>
     struct ConstraintsCallSkeleton<C,true>
     {
@@ -189,6 +210,17 @@ namespace Dune {
 	template<typename LFS, int n, int i> 
 	struct ConstraintsVisitChildMetaProgram2 // visit i'th child of inner node
 	{
+      // BEGIN ParallelStuff
+	  template<typename CG, typename I>
+	  static void processor (const LFS& lfs, CG& cg, const IntersectionGeometry<I>& ig)
+	  {
+		typedef typename LFS::template Child<i>::Type LFSC;
+        const LFSC& lfsc=lfs.template getChild<i>();
+
+        ConstraintsVisitNodeMetaProgram2<LFSC,LFSC::isLeaf>::processor(lfsc,cg,ig);
+		ConstraintsVisitChildMetaProgram2<LFS,n,i+1>::processor(lfs,cg,ig);
+	  }
+      // END ParallelStuff
 	  template<typename CG, typename I>
 	  static void skeleton (const LFS& lfs, CG& cg, const IntersectionGeometry<I>& ig)
 	  {
@@ -212,6 +244,13 @@ namespace Dune {
 	template<typename LFS, int n> 
 	struct ConstraintsVisitChildMetaProgram2<LFS,n,n> // end of child recursion
 	{
+      // BEGIN ParallelStuff
+ 	  template<typename CG, typename I>
+	  static void processor (const LFS& lfs, CG& cg, const IntersectionGeometry<I>& ig)
+	  {
+        return;
+	  }
+      // END ParallelStuff
  	  template<typename CG, typename I>
 	  static void skeleton (const LFS& lfs, CG& cg, const IntersectionGeometry<I>& ig)
 	  {
@@ -228,6 +267,14 @@ namespace Dune {
 	template<typename LFS, bool LFSisLeaf> 
 	struct ConstraintsVisitNodeMetaProgram2 // visit inner node
 	{
+      // BEGIN ParallelStuff
+	  template<typename CG, typename I>
+	  static void processor (const LFS& lfs, CG& cg, const IntersectionGeometry<I>& ig)
+	  {
+        // start child recursion
+		ConstraintsVisitChildMetaProgram2<LFS,LFS::CHILDREN,0>::processor(lfs,cg,ig);
+	  }
+      // END ParallelStuff
 	  template<typename CG, typename I>
 	  static void skeleton (const LFS& lfs, CG& cg, const IntersectionGeometry<I>& ig)
 	  {
@@ -246,6 +293,26 @@ namespace Dune {
 	template<typename LFS> 
 	struct ConstraintsVisitNodeMetaProgram2<LFS,true> // leaf node
 	{
+      // BEGIN ParallelStuff
+	  template<typename CG, typename I>
+	  static void processor (const LFS& lfs, CG& cg, const IntersectionGeometry<I>& ig)
+	  {
+        // now we are at a single component local function space
+        // which is part of a multi component local function space
+
+		// allocate local constraints map
+		CG cl;
+
+        // extract constraints type 
+        typedef typename LFS::Traits::ConstraintsType C;
+
+		// iterate over boundary, need intersection iterator
+        ConstraintsCallProcessor<C,C::doProcessor>::processor(lfs.constraints(),ig,lfs,cl);
+
+		// write coefficients into local vector 
+		lfs.mwrite(cl,cg);
+	  }
+      // BEGIN ParallelStuff
 	  template<typename CG, typename I>
 	  static void skeleton (const LFS& lfs, CG& cg, const IntersectionGeometry<I>& ig)
 	  {
@@ -320,6 +387,14 @@ namespace Dune {
 			  if (iit->boundary())
 				ConstraintsVisitNodeMetaProgram<F,F::isLeaf,LFS,LFS::isLeaf>
 				  ::boundary(f,lfs,cg,IntersectionGeometry<Intersection>(*iit));
+
+              // ParallelStuff: BEGIN support for processor boundaries.
+              // call boundary method also at a processor boundary
+			  if ((!iit->boundary()) && (!iit->neighbor()))
+				ConstraintsVisitNodeMetaProgram2<LFS,LFS::isLeaf>
+				  ::processor(lfs,cg,IntersectionGeometry<Intersection>(*iit));
+              // END support for processor boundaries.
+
 			  if (iit->neighbor())
 				ConstraintsVisitNodeMetaProgram2<LFS,LFS::isLeaf>
 				  ::skeleton(lfs,cg,IntersectionGeometry<Intersection>(*iit));

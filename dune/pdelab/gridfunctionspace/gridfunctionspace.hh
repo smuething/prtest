@@ -175,6 +175,7 @@ namespace Dune {
     {
     public:
       enum { doBoundary = false };
+      enum { doProcessor = false }; // added ParallelStuff
       enum { doSkeleton = false };
       enum { doVolume = false }; // might be necessary for cell-centered in parallel
 
@@ -183,6 +184,13 @@ namespace Dune {
       void boundary (const F& f, const IntersectionGeometry<I>& ig, const LFS& lfs, T& trafo) const
       {
       }
+
+      // BEGIN ParallelStuff
+      template<typename I, typename LFS, typename T>
+      void processor (const IntersectionGeometry<I>& ig, const LFS& lfs, T& trafo) const
+      {
+      }
+      // END ParallelStuff
 
       template<typename I, typename LFS, typename T>
       void skeleton (const IntersectionGeometry<I>& ig, const LFS& lfs, T& trafo) const
