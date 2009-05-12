@@ -7,6 +7,8 @@
 #include<dune/common/geometrytype.hh>
 #include<dune/pdelab/common/geometrywrapper.hh>
 
+#include"../common/geometrywrapper.hh" // ParallelStuff was missing !
+
 namespace Dune {
   namespace PDELab {
 
@@ -16,6 +18,7 @@ namespace Dune {
     {
     public:
       enum { doBoundary = true };
+      enum { doProcessor = false }; // ParallelStuff
       enum { doSkeleton = false };
       enum { doVolume = false };
 
@@ -59,8 +62,6 @@ namespace Dune {
           }
       }
     };
-
-
   }
 }
 
