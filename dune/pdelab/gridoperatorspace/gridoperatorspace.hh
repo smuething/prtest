@@ -129,14 +129,16 @@ namespace Dune {
 			lfsu.bind(*it);
 			lfsv.bind(*it);
 
+            typedef typename LocalSparsityPattern::size_type size_type;
+
             // get local pattern of operator
             {
               LocalSparsityPattern localpattern;
               LocalAssemblerCallSwitch<LA,LA::doPatternVolume>::
                 pattern_volume(la,lfsu,lfsv,localpattern);
-              
+                            
               // translate local to global indices and add to global pattern
-              for (int k=0; k<localpattern.size(); ++k)
+              for (size_type k=0; k<localpattern.size(); ++k)
                 globalpattern.add_link(lfsv.globalIndex(localpattern[k].i()),
                                        lfsu.globalIndex(localpattern[k].j()));
             }
@@ -165,10 +167,10 @@ namespace Dune {
                   pattern_skeleton(la,lfsu,lfsv,lfsun,lfsvn,localpattern_sn,localpattern_ns);
 
                 // translate local to global indices and add to global pattern
-                for (int k=0; k<localpattern_sn.size(); ++k)
+                for (size_type k=0; k<localpattern_sn.size(); ++k)
                   globalpattern.add_link(lfsv.globalIndex(localpattern_sn[k].i()),
                                          lfsun.globalIndex(localpattern_sn[k].j()));
-                for (int k=0; k<localpattern_ns.size(); ++k)
+                for (size_type k=0; k<localpattern_ns.size(); ++k)
                   globalpattern.add_link(lfsvn.globalIndex(localpattern_ns[k].i()),
                                          lfsu.globalIndex(localpattern_ns[k].j()));
 			  }
@@ -544,8 +546,8 @@ namespace Dune {
       template<typename LFSV, typename LFSU, typename T, typename GC>
       void eadd (const LFSV& lfsv, const LFSU& lfsu, const LocalMatrix<T>& localcontainer, GC& globalcontainer) const
       {
-        for (int i=0; i<lfsv.size(); i++)
-          for (int j=0; j<lfsu.size(); j++)
+        for (typename LFSV::Traits::SizeType i=0; i<lfsv.size(); i++)
+          for (typename LFSU::Traits::SizeType j=0; j<lfsu.size(); j++)
             B::access(globalcontainer,lfsv.globalIndex(i),lfsu.globalIndex(j)) += localcontainer(i,j);
       }
 

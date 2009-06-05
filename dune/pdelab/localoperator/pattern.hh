@@ -24,8 +24,8 @@ namespace Dune {
       void pattern_volume (const LFSU& lfsu, const LFSV& lfsv, 
                            LocalSparsityPattern& pattern) const
       {
-        for (int i=0; i<lfsv.size(); ++i)
-          for (int j=0; j<lfsu.size(); ++j)
+        for (typename LFSV::Traits::SizeType i=0; i<lfsv.size(); ++i)
+          for (typename LFSU::Traits::SizeType j=0; j<lfsu.size(); ++j)
             pattern.push_back(SparsityLink(i,j));
       }
    };
@@ -40,8 +40,8 @@ namespace Dune {
       void pattern_skeleton (const LFSU& lfsu_s, const LFSV& lfsv_s, const LFSU& lfsu_n, const LFSV& lfsv_n, 
                              LocalSparsityPattern& pattern_sn, LocalSparsityPattern& pattern_ns) const
       {
-        for (int i=0; i<lfsv_s.size(); ++i)
-          for (int j=0; j<lfsu_n.size(); ++j)
+        for (typename LFSV::Traits::SizeType i=0; i<lfsv_s.size(); ++i)
+          for (typename LFSU::Traits::SizeType j=0; j<lfsu_n.size(); ++j)
             pattern_sn.push_back(SparsityLink(i,j));
         // other half of the pattern made by the neighboring element
       }

@@ -30,6 +30,8 @@ namespace Dune {
      *              -(K(x)\nabla u) \cdot \nu &=& j \mbox{ on } \partial\Omega_N \\
      * \f}
      * with conforming finite elements on all types of grids in any dimension
+     * \tparam K  grid function type giving K
+     * \tparam A0 grid function type giving A0
      * \tparam F grid function type giving f
      * \tparam B grid function type selecting boundary condition
      * \tparam J grid function type giving j
@@ -70,6 +72,8 @@ namespace Dune {
 		typedef typename LFSU::Traits::LocalFiniteElementType::
 		  Traits::LocalBasisType::Traits::RangeType RangeType;
 
+        typedef typename LFSU::Traits::SizeType size_type;
+        
         // dimensions
         const int dim = EG::Geometry::dimension;
         const int dimw = EG::Geometry::dimensionworld;
@@ -93,7 +97,7 @@ namespace Dune {
             // transform gradient to real element
             const Dune::FieldMatrix<DF,dimw,dim> jac = eg.geometry().jacobianInverseTransposed(it->position());
             std::vector<Dune::FieldVector<RF,dim> > gradphi(lfsu.size());
-            for (int i=0; i<lfsu.size(); i++)
+            for (typename LFSU::Traits::SizeType i=0; i<lfsu.size(); i++)
               {
                 gradphi[i] = 0.0;
                 jac.umv(js[i][0],gradphi[i]);
@@ -101,7 +105,7 @@ namespace Dune {
 
             // compute gradient of u
             Dune::FieldVector<RF,dim> gradu(0.0);
-            for (int i=0; i<lfsu.size(); i++)
+            for (typename LFSU::Traits::SizeType i=0; i<lfsu.size(); i++)
               gradu.axpy(x[i],gradphi[i]);
 
             // compute K * gradient of u
@@ -114,7 +118,7 @@ namespace Dune {
 
             // evaluate u
             RF u=0.0;
-            for (int i=0; i<lfsu.size(); i++)
+            for (size_type  i=0; i<lfsu.size(); i++)
               u += x[i]*phi[i];
 
             // evaluate Helmholtz term
@@ -123,7 +127,7 @@ namespace Dune {
 
             // integrate (K grad u)*grad phi_i + a_0*u*phi_i
             RF factor = it->weight() * eg.geometry().integrationElement(it->position());
-            for (int i=0; i<lfsu.size(); i++)
+            for (size_type i=0; i<lfsu.size(); i++)
               r[i] += ( Kgradu*gradphi[i] + y*u*phi[i] )*factor;
           }
 	  }
@@ -166,7 +170,7 @@ namespace Dune {
             // transform gradient to real element
             const Dune::FieldMatrix<DF,dimw,dim> jac = eg.geometry().jacobianInverseTransposed(it->position());
             std::vector<Dune::FieldVector<RF,dim> > gradphi(lfsu.size());
-            for (int i=0; i<lfsu.size(); i++)
+            for (typename LFSU::Traits::SizeType i=0; i<lfsu.size(); i++)
               {
                 gradphi[i] = 0.0;
                 jac.umv(js[i][0],gradphi[i]);
@@ -174,7 +178,7 @@ namespace Dune {
 
             // compute K * gradient of shape functions
             std::vector<Dune::FieldVector<RF,dim> > Kgradphi(lfsu.size());
-            for (int i=0; i<lfsu.size(); i++)
+            for (typename LFSU::Traits::SizeType i=0; i<lfsu.size(); i++)
               tensor.mv(gradphi[i],Kgradphi[i]);
             
             // evaluate basis functions
@@ -187,8 +191,8 @@ namespace Dune {
 
             // integrate (K grad phi_j)*grad phi_i + a_0*phi_j*phi_i
             RF factor = it->weight() * eg.geometry().integrationElement(it->position());
-            for (int j=0; j<lfsu.size(); j++)
-              for (int i=0; i<lfsu.size(); i++)
+            for (typename LFSU::Traits::SizeType j=0; j<lfsu.size(); j++)
+              for (typename LFSU::Traits::SizeType i=0; i<lfsu.size(); i++)
                 mat(i,j) += ( Kgradphi[j]*gradphi[i] + y*phi[j]*phi[i] )*factor;
           }
       }
@@ -205,9 +209,10 @@ namespace Dune {
 		typedef typename LFSV::Traits::LocalFiniteElementType::
 		  Traits::LocalBasisType::Traits::RangeType RangeType;
 
+        typedef typename LFSV::Traits::SizeType size_type;
+        
         // dimensions
         const int dim = EG::Geometry::dimension;
-        const int dimw = EG::Geometry::dimensionworld;
 
         // select quadrature rule
         Dune::GeometryType gt = eg.geometry().type();
@@ -226,7 +231,7 @@ namespace Dune {
 
             // integrate f
             RF factor = it->weight() * eg.geometry().integrationElement(it->position());
-            for (int i=0; i<lfsv.size(); i++)
+            for (size_type i=0; i<lfsv.size(); i++)
               r[i] -= y*phi[i]*factor;
           }
       }
@@ -243,10 +248,11 @@ namespace Dune {
 		typedef typename LFSV::Traits::LocalFiniteElementType::
 		  Traits::LocalBasisType::Traits::RangeType RangeType;
 
+        typedef typename LFSV::Traits::SizeType size_type;
+        
         // dimensions
         const int dim = IG::dimension;
-        const int dimw = IG::dimensionworld;
-
+        
         // select quadrature rule
         Dune::GeometryType gtface = ig.intersectionSelfLocal().type();
         const Dune::QuadratureRule<DF,dim-1>& rule = Dune::QuadratureRules<DF,dim-1>::rule(gtface,qorder);
@@ -274,7 +280,7 @@ namespace Dune {
             
             // integrate J
             RF factor = it->weight()*ig.intersectionGlobal().integrationElement(it->position());
-            for (int i=0; i<lfsv.size(); i++)
+            for (size_type i=0; i<lfsv.size(); i++)
               r[i] += y*phi[i]*factor;
           }
       }
