@@ -96,16 +96,6 @@ testconstraints_LDADD =				\
 	$(LDADD)
 MOSTLYCLEANFILES += testconstraintsp1.vtu testconstraintspowerp1.vtu
 
-NORMALTESTS += testcountingptr
-testcountingptr_SOURCES = testcountingptr.cc
-testcountingptr_CPPFLAGS = $(AM_CPPFLAGS)	\
-	$(ALBERTA_CPPFLAGS)
-testcountingptr_LDFLAGS = $(AM_LDFLAGS)		\
-	$(ALBERTA_LDFLAGS)
-testcountingptr_LDADD =				\
-	$(ALBERTA_LIBS)				\
-	$(LDADD)
-
 NORMALTESTS += testfiniteelementmap
 testfiniteelementmap_SOURCES = testfiniteelementmap.cc
 testfiniteelementmap_CPPFLAGS = $(AM_CPPFLAGS)	\
@@ -358,6 +348,9 @@ check_PROGRAMS += testbdmfem
 testbdmfem_SOURCES = testbdmfem.cc
 
 MOSTLYCLEANFILES += poisson_petsc_*.vtu
+
+check_PROGRAMS += testadaptation
+testadaptation_SOURCES = testadaptation.cc
 
 include $(top_srcdir)/am/global-rules
 
