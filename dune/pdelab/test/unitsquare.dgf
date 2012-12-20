@@ -1,0 +1,12 @@
+DGF
+Interval
+ 0  0         % first corner
+ 1  1         % second corner
+ 1  1         % 4 cells in x and 8 in y direction
+#
+Cube
+#
+GridParameter
+% set closure to none for UGGrid
+closure none
+#

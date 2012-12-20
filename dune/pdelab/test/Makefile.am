@@ -368,6 +368,9 @@ testbdmfem_SOURCES = testbdmfem.cc
 
 MOSTLYCLEANFILES += poisson_petsc_*.vtu
 
+check_PROGRAMS += testadaptation
+testadaptation_SOURCES = testadaptation.cc
+
 check_PROGRAMS += testnonoverlapping
 testnonoverlapping_SOURCES = testnonoverlapping.cc
 testnonoverlapping_CPPFLAGS = $(AM_CPPFLAGS)
