@@ -13,7 +13,7 @@
 #include <dune/pdelab/finiteelementmap/q1fem.hh>
 #include <dune/pdelab/constraints/constraints.hh>
 #include <dune/pdelab/backend/istlvectorbackend.hh>
-#include <dune/pdelab/gridfunctionspace/vtk.hh>
+//#include <dune/pdelab/gridfunctionspace/vtk.hh>
 #include <dune/pdelab/localoperator/l2.hh>
 #include <dune/pdelab/gridoperator/gridoperator.hh>
 
@@ -61,7 +61,7 @@ int main(int argc, char** argv)
     typedef Dune::PDELab::Q1LocalFiniteElementMap<DF,RF,2> FEM;
     FEM fem;
 
-    typedef Dune::PDELab::ISTLVectorBackend<> VBE;
+    typedef Dune::PDELab::ISTLVectorBackend<1> VBE;
     typedef Dune::PDELab::HangingNodesDirichletConstraints<
       Grid,
       Dune::PDELab::HangingNodesConstraintsAssemblers::CubeGridQ1Assembler,
@@ -72,7 +72,7 @@ int main(int argc, char** argv)
 
     typedef Dune::PDELab::GridFunctionSpace<GV,FEM,Constraints,VBE> GFS;
     GFS gfs(gv,fem,constraints);
-    gfs.name("x");
+    //gfs.name("x");
 
     typedef Dune::PDELab::BackendVectorSelector<GFS,int>::Type IV;
     IV x(gfs);
@@ -87,9 +87,9 @@ int main(int argc, char** argv)
         *vit = i;
       }
 
-    Dune::VTKWriter<GV> vtk_writer(gv);
-    Dune::PDELab::addSolutionToVTKWriter(vtk_writer,gfs,x);
-    vtk_writer.write("hangingnodes");
+    //Dune::VTKWriter<GV> vtk_writer(gv);
+    //Dune::PDELab::addSolutionToVTKWriter(vtk_writer,gfs,x);
+    //vtk_writer.write("hangingnodes");
 
     typedef GFS::ConstraintsContainer<RF>::Type CC;
     CC cc;
@@ -110,7 +110,7 @@ int main(int argc, char** argv)
     typedef Dune::PDELab::GridOperator<
       GFS,GFS,
       LOP,
-      Dune::PDELab::ISTLMatrixBackend,
+      Dune::PDELab::ISTLBCRSMatrixBackend<1,1>,
       RF,RF,RF,CC,CC
       > GridOperator;
 
@@ -124,7 +124,7 @@ int main(int argc, char** argv)
 
     grid_operator.jacobian(v,m);
 
-    Dune::printmatrix(std::cout,Dune::PDELab::istl::raw(m),"","");
+    Dune::printmatrix(std::cout,m.base(),"","");
 
     return 0;
   }
