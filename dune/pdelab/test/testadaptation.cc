@@ -119,8 +119,13 @@ int main(int argc, char** argv)
     typedef GridOperator::Traits::Domain V;
     typedef GridOperator::Traits::Jacobian M;
 
-    V v(gfs,0.0);
+    V v(gfs,1.0);
     M m(grid_operator);
+    V r(gfs,0.0);
+
+    grid_operator.residual(v,r);
+
+    Dune::printvector(std::cout,r.base(),"","");
 
     grid_operator.jacobian(v,m);
 
