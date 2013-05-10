@@ -21,7 +21,6 @@
 
 
 class ConstraintsParameters
-  : public Dune::PDELab::DirichletConstraintsParameters
 {
 
 public:
