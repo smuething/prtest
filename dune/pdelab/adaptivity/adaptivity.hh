@@ -411,6 +411,7 @@ namespace Dune {
                             }
                         }
                       //transferMap[(*father).level()][idset.id(*father)] = uCoarse;
+                      // store coarsened value
                       transferMap[idset.id(*father)] = uCoarse;
                     }
                   }
