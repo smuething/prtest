@@ -26,8 +26,8 @@ class ConstraintsParameters
 
 public:
 
-  template<typename I>
-  bool isDirichlet(const I & ig, const Dune::FieldVector<typename I::ctype, I::dimension-1> & x) const
+  template<typename I, typename Coord>
+  bool isDirichlet(const I & ig, const Coord & x) const
   {
     return false;
   }
